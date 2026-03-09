@@ -4,6 +4,16 @@ import os
 import yaml
 from pydbus import SessionBus
 from gi.repository import GLib, Gio
+import logging
+
+# ---------------------------
+# Logging setup
+# ---------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+log = logging.getLogger("KSLM")
 
 CONFIG_PATH = os.path.expanduser("~/.config/kslm.yml")
 DEFAULT_LAYOUTS = ["us", "ua"]
@@ -29,7 +39,7 @@ def load_config():
             cfg = yaml.safe_load(f)
             CFG_LAYOUTS = cfg.get("layouts", DEFAULT_LAYOUTS)
     except Exception as e:
-        print("Config error:", e)
+        log.error(f"Config error: {e}")
         CFG_LAYOUTS = DEFAULT_LAYOUTS
 
 # ---------------------------
@@ -57,12 +67,12 @@ def refresh_layouts():
         if new_layouts != LAYOUTS:
             LAYOUTS = new_layouts
             LAYOUT_MAP = {l["layout"]: l["index"] for l in LAYOUTS}
-            print("Layout map updated:")
+            log.info("Layout map updated:")
             for l in LAYOUTS:
-                print(f'{l["index"]:2}  {l["layout"]:3}  {l["name"]}')
+                log.info(f'{l["index"]:2}  {l["layout"]:3}  {l["name"]}')
 
     except Exception as e:
-        print("Failed to refresh layouts:", e)
+        log.error(f"Failed to refresh layouts: {e}")
 
 # ---------------------------
 # Layout helpers
@@ -92,7 +102,7 @@ def next_layout():
     target_index = LAYOUT_MAP.get(target)
     if target_index is not None:
         set_layout(target_index)
-        print("Switched layout:", target)
+        log.info(f"Switched layout to: {target}")
 
 # ---------------------------
 # D-Bus service
@@ -118,16 +128,16 @@ gconnection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
 
 def on_layout_list_changed(connection, sender_name, object_path, interface_name, signal_name, parameters):
     # Called when the list of layouts changes
-    print("Layout list changed signal received!")
+    log.debug("Layout list changed signal received!")
     refresh_layouts()
 
 def on_layout_changed(connection, sender_name, object_path, interface_name, signal_name, parameters):
     # Called when the current layout changes
     index = parameters.unpack()[0]
     if 0 <= index < len(LAYOUTS):
-        print("Layout changed signal:", LAYOUTS[index]["layout"])
+        log.debug(f"Layout changed signal: {LAYOUTS[index]["layout"]}")
     else:
-        print("Layout changed signal: index", index)
+        log.debug(f"Layout changed signal: {index}")
 
 # Subscribe to layout list change signal
 gconnection.signal_subscribe(
@@ -157,5 +167,5 @@ gconnection.signal_subscribe(
 load_config()
 refresh_layouts()
 
-print("Layout daemon running...")
+log.info("Layout daemon running...")
 GLib.MainLoop().run()
