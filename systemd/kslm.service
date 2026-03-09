@@ -1,0 +1,13 @@
+[Unit]
+Description=KSLM Keyboard Layout Daemon
+After=graphical.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kslm.py
+Restart=on-failure
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+
+[Install]
+WantedBy=default.target
