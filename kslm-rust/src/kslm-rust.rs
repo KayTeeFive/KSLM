@@ -23,7 +23,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 use zbus::{
     connection::Builder,
     interface,
@@ -36,19 +36,9 @@ use futures_util::StreamExt;
 // Configuration
 // ---------------------------
 
-const DEFAULT_LAYOUTS: &[&str] = &["us", "ua"];
-
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
     layouts: Vec<String>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            layouts: DEFAULT_LAYOUTS.iter().map(|s| s.to_string()).collect(),
-        }
-    }
 }
 
 fn config_path() -> PathBuf {
@@ -57,33 +47,61 @@ fn config_path() -> PathBuf {
         .join("kslm.yml")
 }
 
-fn load_config() -> Config {
+// Load config, or auto-generate it from KDE layouts if missing
+async fn load_config(proxy: &KdeKeyboardProxy<'_>) -> Config {
     let path = config_path();
 
     if !path.exists() {
-        let cfg = Config::default();
+        info!("Config not found, detecting layouts from KDE...");
+
+        let layouts = match proxy.get_layouts_list().await {
+            Ok(raw) => {
+                let detected: Vec<String> = raw
+                    .iter()
+                    .take(2)
+                    .map(|(layout, _, _)| layout.clone())
+                    .collect();
+
+                if detected.is_empty() {
+                    warn!("No layouts detected from KDE, config will be empty");
+                }
+
+                detected
+            }
+            Err(e) => {
+                error!("Failed to get layouts from KDE: {}", e);
+                vec![]
+            }
+        };
+
+        let cfg = Config { layouts };
+
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
+
         match serde_yaml::to_string(&cfg) {
             Ok(content) => {
-                if let Err(e) = fs::write(&path, content) {
-                    error!("Failed to write default config: {}", e);
+                if let Err(e) = fs::write(&path, &content) {
+                    error!("Failed to write config: {}", e);
+                } else {
+                    info!("Config created: {:?}", path);
                 }
             }
-            Err(e) => error!("Failed to serialize default config: {}", e),
+            Err(e) => error!("Failed to serialize config: {}", e),
         }
+
         return cfg;
     }
 
     match fs::read_to_string(&path) {
         Ok(content) => serde_yaml::from_str(&content).unwrap_or_else(|e| {
             error!("Config parse error: {}", e);
-            Config::default()
+            Config { layouts: vec![] }
         }),
         Err(e) => {
             error!("Config read error: {}", e);
-            Config::default()
+            Config { layouts: vec![] }
         }
     }
 }
@@ -254,7 +272,6 @@ async fn listen_signals(
     proxy: Arc<KdeKeyboardProxy<'static>>,
     state: SharedState,
 ) {
-    // Clone proxy for each stream
     let proxy_list = proxy.clone();
     let proxy_change = proxy.clone();
     let state_list = state.clone();
@@ -306,9 +323,6 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    let cfg = load_config();
-    info!("Loaded config layouts: {:?}", cfg.layouts);
-
     // Connect to session D-Bus
     let conn = Connection::session().await?;
 
@@ -317,8 +331,13 @@ async fn main() -> anyhow::Result<()> {
 
     let state: SharedState = Arc::new(RwLock::new(LayoutState::default()));
 
-    // Initial layout refresh
+    // Initial layout refresh — must happen before load_config
+    // so the state is populated and config can read layout names
     refresh_layouts(&proxy, &state).await;
+
+    // Load config — auto-generates from KDE layouts if missing
+    let cfg = load_config(&proxy).await;
+    info!("Active config layouts: {:?}", cfg.layouts);
 
     // Start signal listeners
     listen_signals(proxy.clone(), state.clone()).await;
