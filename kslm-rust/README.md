@@ -1,4 +1,4 @@
-# KSLM – KDE Simple Layout Manager (Rust)
+# KSLM – KDE Simple Layout Manager (SpareLayouts Hack) RUST version
 
 KDE Wayland does not support switching keyboard layouts via `xdotool` / `xkb-switch`.
 KSLM is a minimal D-Bus daemon that subscribes to the KDE Keyboard API
@@ -130,3 +130,9 @@ Or to test without reinstalling:
 ```bash
 RUST_LOG=kslm=debug ~/.local/bin/kslm-rust
 ```
+
+---
+
+## License
+
+GPL-3.0 license © 2026
