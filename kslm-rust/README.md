@@ -18,8 +18,8 @@ and exposes a `toggle` method for cycling through layouts.
 │   └── kslm-rust.service   # Systemd user service
 ├── Cargo.toml
 ├── Dockerfile              # Build environment (rust:1.89-slim-trixie)
-├── make_build_env.sh             # Build Docker image
-├── build.sh                # Compile binary inside Docker
+├── build_binary.sh         # Compile binary inside Docker
+├── build_env.sh            # Build Docker image
 ├── install.sh              # Install binary + systemd service
 └── uninstall.sh            # Remove binary + systemd service
 ```
@@ -29,7 +29,7 @@ and exposes a `toggle` method for cycling through layouts.
 **Step 1.** Build the Docker image (only once):
 
 ```bash
-./make_build_env.sh
+./build_env.sh
 ```
 
 This creates the `kslm-builder:260309` image based on `rust:1.89-slim-trixie`
@@ -38,7 +38,7 @@ with `libdbus-1-dev` and `libglib2.0-dev`.
 **Step 2.** Compile the binary:
 
 ```bash
-./build.sh
+./build_binary.sh
 ```
 
 Binary will be at `target/release/kslm-rust`.
