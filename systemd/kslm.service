@@ -1,13 +1,13 @@
 [Unit]
-Description=KSLM Keyboard Layout Daemon
-After=graphical.target
+Description=KSLM – KDE Simple Layout Manager (Python)
+After=graphical-session.target
+PartOf=graphical-session.target
 
 [Service]
 Type=simple
 ExecStart=%h/.local/bin/kslm.py
 Restart=on-failure
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=%h/.Xauthority
+RestartSec=3
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
