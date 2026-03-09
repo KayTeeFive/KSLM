@@ -1,0 +1,14 @@
+[Unit]
+Description=KSLM – KDE Simple Layout Manager (RUST)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/kslm-rust
+Restart=on-failure
+RestartSec=3
+Environment=RUST_LOG=kslm=info
+
+[Install]
+WantedBy=graphical-session.target
