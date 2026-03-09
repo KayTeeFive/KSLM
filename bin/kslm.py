@@ -32,7 +32,6 @@ logging.basicConfig(
 log = logging.getLogger("KSLM")
 
 CONFIG_PATH = os.path.expanduser("~/.config/kslm.yml")
-DEFAULT_LAYOUTS = ["us", "ua"]
 
 LAYOUTS = []
 LAYOUT_MAP = {}
@@ -44,19 +43,23 @@ CFG_LAYOUTS = []
 def load_config():
     global CFG_LAYOUTS
 
-    # Create config file with defaults if missing
+    # Create config file from first two KDE layouts if missing
     if not os.path.exists(CONFIG_PATH):
+        log.info(f"Config not found, detecting layouts from KDE...")
+        detected = [l["layout"] for l in LAYOUTS[:2]]
         os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
         with open(CONFIG_PATH, "w") as f:
-            yaml.dump({"layouts": DEFAULT_LAYOUTS}, f)
+            yaml.dump({"layouts": detected}, f)
+        log.info(f'Config created: "{CONFIG_PATH}"')
+        log.info(f"Active config layouts: {detected}")
 
     try:
         with open(CONFIG_PATH) as f:
             cfg = yaml.safe_load(f)
-            CFG_LAYOUTS = cfg.get("layouts", DEFAULT_LAYOUTS)
+            CFG_LAYOUTS = cfg.get("layouts", [])
     except Exception as e:
         log.error(f"Config error: {e}")
-        CFG_LAYOUTS = DEFAULT_LAYOUTS
+        CFG_LAYOUTS = []
 
 # ---------------------------
 # Connect to KDE keyboard D-Bus API
@@ -151,7 +154,7 @@ def on_layout_changed(connection, sender_name, object_path, interface_name, sign
     # Called when the current layout changes
     index = parameters.unpack()[0]
     if 0 <= index < len(LAYOUTS):
-        log.debug(f"Layout changed signal: {LAYOUTS[index]["layout"]}")
+        log.debug(f"Layout changed signal: {LAYOUTS[index]['layout']}")
     else:
         log.debug(f"Layout changed signal: {index}")
 
@@ -180,8 +183,8 @@ gconnection.signal_subscribe(
 # ---------------------------
 # Startup
 # ---------------------------
-load_config()
 refresh_layouts()
+load_config()
 
 log.info("Layout daemon running...")
 GLib.MainLoop().run()
