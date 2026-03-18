@@ -89,7 +89,7 @@ dbus-send --session --type=method_call \
 ```
 Or
 ```bash
-qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon toggle
+qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon org.kslm.LayoutDaemon.toggle
 ```
 
 Bind this command to a shortcut in KDE Settings → Shortcuts → Custom Shortcuts.
@@ -104,7 +104,7 @@ Bind this command to a shortcut in KDE Settings → Shortcuts → Custom Shortcu
 4. Set a trigger key combination (e.g., Ctrl+Alt+Space).
 5. Set the action to this command:
     ```
-    qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon toggle
+    qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon org.kslm.LayoutDaemon.toggle
     ```
 6. Click Apply.
 

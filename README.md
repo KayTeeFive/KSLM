@@ -54,7 +54,7 @@ Once installed, the daemon runs automatically in the background.
 
 You can toggle layouts via D-Bus:
 ```bash
-qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon toggle
+qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon org.kslm.LayoutDaemon.toggle
 ```
 
 Or from another script using Python:
@@ -110,7 +110,7 @@ systemctl stop --user kslm.service
 4. Set a trigger key combination (e.g., Ctrl+Alt+Space).
 5. Set the action to this command:
     ```
-    qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon toggle
+    qdbus org.kslm.LayoutDaemon /org/kslm/LayoutDaemon org.kslm.LayoutDaemon.toggle
     ```
 6. Click Apply.
 
